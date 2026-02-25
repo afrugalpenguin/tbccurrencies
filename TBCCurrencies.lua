@@ -299,12 +299,13 @@ end
 local function CreatePanel()
     local playerFaction = UnitFactionGroup("player")
 
-    panel = CreateFrame("Frame", "TBCCurrenciesPanel", PaperDollFrame)
-    panel:SetAllPoints(PaperDollFrame)
-    panel:SetFrameLevel(PaperDollFrame:GetFrameLevel() + 10)
+    panel = CreateFrame("Frame", "TBCCurrenciesPanel", CharacterFrame)
+    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 11, -62)
+    panel:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -32, 76)
+    panel:SetFrameLevel(CharacterFrame:GetFrameLevel() + 20)
     panel:Hide()
 
-    -- Opaque background to cover PaperDollFrame content underneath
+    -- Opaque background to cover all content underneath
     local bg = panel:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
     bg:SetColorTexture(0.05, 0.05, 0.05, 0.95)
