@@ -1,0 +1,8 @@
+## Interface: 20505
+## Title: TBCCurrencies
+## Notes: Adds a Currency tab to the Character frame showing all TBC currencies
+## Author: Russel
+## Version: @project-version@
+## IconTexture: Interface\Icons\INV_Misc_Coin_01
+
+TBCCurrencies.lua

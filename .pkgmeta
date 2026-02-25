@@ -1,0 +1,18 @@
+package-as: TBCCurrencies
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - images
+  - README.md
+  - CHANGELOG.md
+  - .gitignore
+  - .pkgmeta
+  - .github
+  - "*.svg"
+  - "*.png"
+  - docs
+  - tests
+  - .luacheckrc
