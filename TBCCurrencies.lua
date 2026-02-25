@@ -283,16 +283,22 @@ local function CreateTab()
 
     hooksecurefunc("CharacterFrameTab_OnClick", function(self)
         if self:GetID() == tabID then
-            -- Hide all other subframes
+            -- Hide all known subframes (including Blizzard ones the hook may have shown)
             for _, frameName in ipairs(CHARACTERFRAME_SUBFRAMES) do
                 local frame = _G[frameName]
                 if frame and frameName ~= "TBCCurrenciesPanel" then
                     frame:Hide()
                 end
             end
+            -- Explicitly hide Blizzard frames that may have been shown by the original handler
+            if PaperDollFrame then PaperDollFrame:Hide() end
+            if PetPaperDollFrame then _G["PetPaperDollFrame"]:Hide() end
+            if _G["ReputationFrame"] then _G["ReputationFrame"]:Hide() end
+            if _G["SkillFrame"] then _G["SkillFrame"]:Hide() end
+            if _G["PVPFrame"] then _G["PVPFrame"]:Hide() end
+            if _G["TokenFrame"] then _G["TokenFrame"]:Hide() end
             panel:Show()
             PanelTemplates_SetTab(CharacterFrame, tabID)
-            PlaySound(841)
         else
             panel:Hide()
         end
