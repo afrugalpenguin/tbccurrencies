@@ -281,20 +281,23 @@ local function CreateTab()
 
     PanelTemplates_SetNumTabs(CharacterFrame, numTabs)
 
-    hooksecurefunc("CharacterFrameTab_OnClick", function(self)
-        if self:GetID() == tabID then
-            -- Hide Blizzard subframes (same ones Blizzard hides when switching tabs)
-            for _, frameName in ipairs(CHARACTERFRAME_SUBFRAMES) do
-                local frame = _G[frameName]
-                if frame and frameName ~= "TBCCurrenciesPanel" then
-                    frame:Hide()
-                end
+    -- Override OnClick for OUR tab only so Blizzard's handler never fires for it
+    tab:SetScript("OnClick", function()
+        -- Hide Blizzard subframes
+        for _, frameName in ipairs(CHARACTERFRAME_SUBFRAMES) do
+            local frame = _G[frameName]
+            if frame and frameName ~= "TBCCurrenciesPanel" then
+                frame:Hide()
             end
-            panel:Show()
-            PanelTemplates_SetTab(CharacterFrame, tabID)
-        else
-            panel:Hide()
         end
+        panel:Show()
+        PanelTemplates_SetTab(CharacterFrame, tabID)
+        PlaySound(841)
+    end)
+
+    -- When a Blizzard tab is clicked, hide our panel
+    hooksecurefunc("CharacterFrameTab_OnClick", function()
+        panel:Hide()
     end)
 end
 
