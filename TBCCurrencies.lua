@@ -281,45 +281,33 @@ local function CreateTab()
 
     PanelTemplates_SetNumTabs(CharacterFrame, numTabs)
 
-    -- Hook the global ToggleCharacter to handle our panel
-    -- Blizzard's CharacterFrameTab_OnClick calls ToggleCharacter(subframeName)
-    -- which calls CharacterFrame_ShowSubFrame — this hides all subframes then shows the requested one.
-    -- For our tab, Blizzard won't know what to show, so all subframes get hidden — perfect.
-    -- We just need to show our panel afterwards.
-    hooksecurefunc("CharacterFrame_ShowSubFrame", function(frameName)
-        if frameName == "TBCCurrenciesPanel" then
-            panel:Show()
-        else
-            panel:Hide()
-        end
+    -- Our tab clicks: show PaperDollFrame (for background) + our panel on top
+    tab:SetScript("OnClick", function()
+        CharacterFrame_ShowSubFrame("PaperDollFrame")
+        panel:Show()
+        PanelTemplates_SetTab(CharacterFrame, tabID)
+        PlaySound(841)
     end)
 
-    -- Make Blizzard's tab handler call ToggleCharacter with our frame name
-    -- The XML OnClick calls CharacterFrameTab_OnClick, which checks tab names.
-    -- We hook it to add our case.
-    local origOnClick = CharacterFrameTab_OnClick
-    CharacterFrameTab_OnClick = function(self, button)
-        if self:GetName() == "CharacterFrameTab" .. tabID then
-            PlaySound(841)
-            CharacterFrame_ShowSubFrame("TBCCurrenciesPanel")
-            PanelTemplates_SetTab(CharacterFrame, tabID)
-        else
-            origOnClick(self, button)
-        end
-    end
+    -- When any Blizzard tab is clicked, hide our panel
+    hooksecurefunc("CharacterFrameTab_OnClick", function()
+        panel:Hide()
+    end)
 end
 
 -- Build the panel and all currency rows
 local function CreatePanel()
     local playerFaction = UnitFactionGroup("player")
 
-    panel = CreateFrame("Frame", "TBCCurrenciesPanel", CharacterFrame)
-    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 11, -12)
-    panel:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -32, 76)
+    panel = CreateFrame("Frame", "TBCCurrenciesPanel", PaperDollFrame)
+    panel:SetAllPoints(PaperDollFrame)
+    panel:SetFrameLevel(PaperDollFrame:GetFrameLevel() + 10)
     panel:Hide()
 
-    -- Register in CHARACTERFRAME_SUBFRAMES
-    tinsert(CHARACTERFRAME_SUBFRAMES, "TBCCurrenciesPanel")
+    -- Opaque background to cover PaperDollFrame content underneath
+    local bg = panel:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.05, 0.05, 0.05, 0.95)
 
     -- Panel title
     local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
