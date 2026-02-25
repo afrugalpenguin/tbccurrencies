@@ -9,6 +9,11 @@ local ICON_SIZE = 16
 local LEFT_PADDING = 16
 local RIGHT_PADDING = 16
 local TOP_OFFSET = -72
+local CONTENT_WIDTH = 298
+
+-- Currency IDs for honor/arena (used with GetCurrencyInfo)
+local HONOR_CURRENCY_ID = 1901
+local ARENA_CURRENCY_ID = 1900
 
 -- Currency data table
 local CURRENCIES = {
@@ -21,8 +26,8 @@ local CURRENCIES = {
     {
         section = "PvP",
         currencies = {
-            { name = "Honor Points", type = "points", id = "honor", icon = "Interface\\Icons\\PVPCurrency-Honor-Alliance" },
-            { name = "Arena Points", type = "points", id = "arena", icon = "Interface\\Icons\\PVPCurrency-Conquest-Horde" },
+            { name = "Honor Points", type = "currency", currencyID = HONOR_CURRENCY_ID },
+            { name = "Arena Points", type = "currency", currencyID = ARENA_CURRENCY_ID },
         },
     },
     {
@@ -63,6 +68,7 @@ local CURRENCIES = {
 
 local panel
 local rows = {}
+local sections = {} -- track section frames for collapse/expand
 local tabID
 
 -- Format copper amount into colored gold/silver/copper string
@@ -82,41 +88,96 @@ local function GetItemIcon(itemID)
     return texture or FALLBACK_ICON
 end
 
--- Try to resolve any fallback icons with real item icons
+-- Get currency info (icon + count) via GetCurrencyInfo
+local function GetCurrencyData(currencyID)
+    local name, count, texture = GetCurrencyInfo(currencyID)
+    return name, count or 0, texture or FALLBACK_ICON
+end
+
+-- Try to resolve any fallback icons with real item/currency icons
 local function ResolveIcons()
     for _, row in ipairs(rows) do
-        if row.currency and row.currency.type == "item" and row.currency.itemID then
-            local icon = GetItemIcon(row.currency.itemID)
-            if icon ~= FALLBACK_ICON then
-                row.icon:SetTexture(icon)
+        if row.currency then
+            if row.currency.type == "item" and row.currency.itemID then
+                local icon = GetItemIcon(row.currency.itemID)
+                if icon ~= FALLBACK_ICON then
+                    row.icon:SetTexture(icon)
+                end
+            elseif row.currency.type == "currency" and row.currency.currencyID then
+                local _, _, texture = GetCurrencyInfo(row.currency.currencyID)
+                if texture then
+                    row.icon:SetTexture(texture)
+                end
             end
         end
     end
 end
 
--- Create a section header with separator line
-local function CreateSectionHeader(parent, text, yOffset)
-    local header = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    header:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, yOffset)
-    header:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -RIGHT_PADDING, yOffset)
+-- Reposition all visible rows after a collapse/expand
+local function RelayoutPanel()
+    local yOffset = TOP_OFFSET
+
+    for _, sec in ipairs(sections) do
+        -- Position header
+        sec.headerFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", LEFT_PADDING, yOffset)
+        yOffset = yOffset - HEADER_HEIGHT
+
+        if not sec.collapsed then
+            for _, row in ipairs(sec.rows) do
+                row:SetPoint("TOPLEFT", panel, "TOPLEFT", LEFT_PADDING, yOffset)
+                row:Show()
+                yOffset = yOffset - ROW_HEIGHT
+            end
+        else
+            for _, row in ipairs(sec.rows) do
+                row:Hide()
+            end
+        end
+
+        yOffset = yOffset - 4 -- spacing between sections
+    end
+end
+
+-- Create a clickable section header with collapse/expand toggle
+local function CreateSectionHeader(parent, text, sectionIndex)
+    local headerFrame = CreateFrame("Button", nil, parent)
+    headerFrame:SetHeight(HEADER_HEIGHT)
+    headerFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, 0)
+    headerFrame:SetWidth(CONTENT_WIDTH)
+
+    -- Triangle indicator
+    local arrow = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    arrow:SetPoint("LEFT", headerFrame, "LEFT", 0, 0)
+    arrow:SetTextColor(1, 0.82, 0)
+    arrow:SetText("v")
+
+    local header = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    header:SetPoint("LEFT", arrow, "RIGHT", 4, 0)
     header:SetTextColor(1, 0.82, 0)
     header:SetText(text)
-    header:SetJustifyH("LEFT")
 
-    local separator = parent:CreateTexture(nil, "ARTWORK")
-    separator:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
-    separator:SetPoint("RIGHT", parent, "RIGHT", -RIGHT_PADDING, 0)
+    local separator = headerFrame:CreateTexture(nil, "ARTWORK")
+    separator:SetPoint("TOPLEFT", header, "BOTTOMLEFT", -14, -2)
+    separator:SetPoint("RIGHT", headerFrame, "RIGHT", 0, 0)
     separator:SetHeight(1)
     separator:SetColorTexture(0.6, 0.5, 0.2, 0.5)
 
-    return yOffset - HEADER_HEIGHT
+    headerFrame:SetScript("OnClick", function()
+        local sec = sections[sectionIndex]
+        sec.collapsed = not sec.collapsed
+        arrow:SetText(sec.collapsed and ">" or "v")
+        RelayoutPanel()
+    end)
+
+    headerFrame.arrow = arrow
+    return headerFrame
 end
 
 -- Create a money display row
-local function CreateMoneyRow(parent, yOffset)
+local function CreateMoneyRow(parent)
     local row = CreateFrame("Frame", nil, parent)
-    row:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, yOffset)
-    row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -RIGHT_PADDING, yOffset)
+    row:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, 0)
+    row:SetWidth(CONTENT_WIDTH)
     row:SetHeight(ROW_HEIGHT)
 
     local icon = row:CreateTexture(nil, "ARTWORK")
@@ -132,14 +193,14 @@ local function CreateMoneyRow(parent, yOffset)
     row.text = text
     row.type = "money"
 
-    return row, yOffset - ROW_HEIGHT
+    return row
 end
 
 -- Create a currency display row (icon + name + count)
-local function CreateCurrencyRow(parent, currency, yOffset)
+local function CreateCurrencyRow(parent, currency)
     local row = CreateFrame("Frame", nil, parent)
-    row:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, yOffset)
-    row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -RIGHT_PADDING, yOffset)
+    row:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, 0)
+    row:SetWidth(CONTENT_WIDTH)
     row:SetHeight(ROW_HEIGHT)
 
     local icon = row:CreateTexture(nil, "ARTWORK")
@@ -149,6 +210,9 @@ local function CreateCurrencyRow(parent, currency, yOffset)
     -- Set icon texture
     if currency.type == "item" then
         icon:SetTexture(GetItemIcon(currency.itemID))
+    elseif currency.type == "currency" then
+        local _, _, texture = GetCurrencyInfo(currency.currencyID)
+        icon:SetTexture(texture or FALLBACK_ICON)
     else
         icon:SetTexture(currency.icon or FALLBACK_ICON)
     end
@@ -173,7 +237,7 @@ local function CreateCurrencyRow(parent, currency, yOffset)
     row.countText = countText
     row.currency = currency
 
-    return row, yOffset - ROW_HEIGHT
+    return row
 end
 
 -- Update all currency counts
@@ -187,10 +251,9 @@ local function UpdateCurrencies()
             local count = 0
             local curr = row.currency
 
-            if curr.type == "points" and curr.id == "honor" then
-                count = GetHonorCurrency()
-            elseif curr.type == "points" and curr.id == "arena" then
-                count = GetArenaCurrency()
+            if curr.type == "currency" and curr.currencyID then
+                local _, amount = GetCurrencyInfo(curr.currencyID)
+                count = amount or 0
             elseif curr.type == "item" and curr.itemID then
                 count = GetItemCount(curr.itemID)
             end
@@ -247,7 +310,8 @@ local function CreatePanel()
     local playerFaction = UnitFactionGroup("player")
 
     panel = CreateFrame("Frame", "TBCCurrenciesPanel", CharacterFrame)
-    panel:SetAllPoints()
+    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 11, -12)
+    panel:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -32, 76)
     panel:Hide()
 
     -- Register in CHARACTERFRAME_SUBFRAMES
@@ -255,10 +319,10 @@ local function CreatePanel()
 
     -- Panel title
     local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOP", panel, "TOP", 0, -22)
+    title:SetPoint("TOP", panel, "TOP", 0, -10)
     title:SetText("Currency")
 
-    local yOffset = TOP_OFFSET
+    local sectionIndex = 0
 
     for _, sectionData in ipairs(CURRENCIES) do
         -- Check if section has any visible currencies for this faction
@@ -271,23 +335,33 @@ local function CreatePanel()
         end
 
         if hasVisible then
-            yOffset = CreateSectionHeader(panel, sectionData.section, yOffset)
+            sectionIndex = sectionIndex + 1
+            local headerFrame = CreateSectionHeader(panel, sectionData.section, sectionIndex)
+
+            local sectionRows = {}
 
             for _, curr in ipairs(sectionData.currencies) do
                 if not curr.faction or curr.faction == playerFaction then
+                    local row
                     if curr.type == "money" then
-                        local row
-                        row, yOffset = CreateMoneyRow(panel, yOffset)
-                        tinsert(rows, row)
+                        row = CreateMoneyRow(panel)
                     else
-                        local row
-                        row, yOffset = CreateCurrencyRow(panel, curr, yOffset)
-                        tinsert(rows, row)
+                        row = CreateCurrencyRow(panel, curr)
                     end
+                    tinsert(rows, row)
+                    tinsert(sectionRows, row)
                 end
             end
+
+            tinsert(sections, {
+                headerFrame = headerFrame,
+                rows = sectionRows,
+                collapsed = false,
+            })
         end
     end
+
+    RelayoutPanel()
 
     panel:SetScript("OnShow", function()
         ResolveIcons()
@@ -304,7 +378,7 @@ addon:SetScript("OnEvent", function(self, event)
         CreatePanel()
         self:RegisterEvent("BAG_UPDATE")
         self:RegisterEvent("PLAYER_MONEY")
-        self:RegisterEvent("HONOR_CURRENCY_UPDATE")
+        self:RegisterEvent("CURRENCY_DISPLAY_UPDATE")
         self:RegisterEvent("GET_ITEM_INFO_RECEIVED")
     elseif event == "GET_ITEM_INFO_RECEIVED" then
         ResolveIcons()
