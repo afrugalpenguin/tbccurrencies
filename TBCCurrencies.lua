@@ -8,7 +8,7 @@ local HEADER_HEIGHT = 20
 local ICON_SIZE = 16
 local LEFT_PADDING = 16
 local RIGHT_PADDING = 16
-local TOP_OFFSET = -10
+local TOP_OFFSET = -72
 local CONTENT_WIDTH = 298
 
 -- Currency IDs for honor/arena (used with GetCurrencyInfo)
@@ -281,18 +281,16 @@ local function CreateTab()
 
     PanelTemplates_SetNumTabs(CharacterFrame, numTabs)
 
-    -- Our tab clicks: show PaperDollFrame (for background) + our panel on top
-    tab:SetScript("OnClick", function()
-        CharacterFrame_ShowSubFrame("PaperDollFrame")
-        panel:Show()
-        PanelTemplates_SetTab(CharacterFrame, tabID)
-        PlaySound(841)
-    end)
-
-    -- When any Blizzard tab is clicked, hide our panel
-    hooksecurefunc("CharacterFrameTab_OnClick", function()
-        panel:Hide()
-    end)
+    -- Add our tab to CharacterFrameTab_OnClick by replacing it
+    local origOnClick = CharacterFrameTab_OnClick
+    CharacterFrameTab_OnClick = function(self, button)
+        if self:GetName() == "CharacterFrameTab" .. tabID then
+            ToggleCharacter("TBCCurrenciesPanel")
+            PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+        else
+            origOnClick(self, button)
+        end
+    end
 end
 
 -- Build the panel and all currency rows
@@ -300,15 +298,34 @@ local function CreatePanel()
     local playerFaction = UnitFactionGroup("player")
 
     panel = CreateFrame("Frame", "TBCCurrenciesPanel", CharacterFrame)
-    panel:SetFrameStrata("HIGH")
-    panel:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 11, -62)
-    panel:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -32, 76)
+    panel:SetSize(CharacterFrame:GetWidth(), CharacterFrame:GetHeight())
+    panel:SetAllPoints(CharacterFrame)
+    panel:SetID(tabID)
     panel:Hide()
 
-    -- Opaque background to cover all content underneath (including other addons)
-    local bg = panel:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetColorTexture(0.05, 0.05, 0.05, 1)
+    -- Register in CHARACTERFRAME_SUBFRAMES so Blizzard's show/hide system works
+    tinsert(CHARACTERFRAME_SUBFRAMES, "TBCCurrenciesPanel")
+
+    -- Background textures matching other CharacterFrame subframes (Reputation, Skills, etc.)
+    local bgTL = panel:CreateTexture(nil, "BORDER")
+    bgTL:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-General-TopLeft")
+    bgTL:SetSize(256, 256)
+    bgTL:SetPoint("TOPLEFT")
+
+    local bgTR = panel:CreateTexture(nil, "BORDER")
+    bgTR:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-General-TopRight")
+    bgTR:SetSize(128, 256)
+    bgTR:SetPoint("TOPRIGHT")
+
+    local bgBL = panel:CreateTexture(nil, "BORDER")
+    bgBL:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-General-BottomLeft")
+    bgBL:SetSize(256, 256)
+    bgBL:SetPoint("BOTTOMLEFT")
+
+    local bgBR = panel:CreateTexture(nil, "BORDER")
+    bgBR:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-General-BottomRight")
+    bgBR:SetSize(128, 256)
+    bgBR:SetPoint("BOTTOMRIGHT")
 
     local sectionIndex = 0
 
