@@ -23,16 +23,16 @@ local CURRENCIES = {
         },
     },
     {
+        section = "PvE",
+        currencies = {
+            { name = "Badge of Justice", type = "item", itemID = 29434 },
+        },
+    },
+    {
         section = "PvP",
         currencies = {
             { name = "Honor Points", type = "currency", currencyID = HONOR_CURRENCY_ID },
             { name = "Arena Points", type = "currency", currencyID = ARENA_CURRENCY_ID },
-        },
-    },
-    {
-        section = "PvE",
-        currencies = {
-            { name = "Badge of Justice", type = "item", itemID = 29434 },
         },
     },
     {
