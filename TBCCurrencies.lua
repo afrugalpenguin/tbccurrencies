@@ -8,7 +8,7 @@ local HEADER_HEIGHT = 20
 local ICON_SIZE = 16
 local LEFT_PADDING = 16
 local RIGHT_PADDING = 16
-local TOP_OFFSET = -72
+local TOP_OFFSET = -10
 local CONTENT_WIDTH = 298
 
 -- Currency IDs for honor/arena (used with GetCurrencyInfo)
@@ -300,20 +300,15 @@ local function CreatePanel()
     local playerFaction = UnitFactionGroup("player")
 
     panel = CreateFrame("Frame", "TBCCurrenciesPanel", CharacterFrame)
+    panel:SetFrameStrata("HIGH")
     panel:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 11, -62)
     panel:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -32, 76)
-    panel:SetFrameLevel(CharacterFrame:GetFrameLevel() + 20)
     panel:Hide()
 
-    -- Opaque background to cover all content underneath
+    -- Opaque background to cover all content underneath (including other addons)
     local bg = panel:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
-    bg:SetColorTexture(0.05, 0.05, 0.05, 0.95)
-
-    -- Panel title
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOP", panel, "TOP", 0, -10)
-    title:SetText("Currency")
+    bg:SetColorTexture(0.05, 0.05, 0.05, 1)
 
     local sectionIndex = 0
 
