@@ -84,7 +84,7 @@ end
 
 -- Try to resolve any fallback icons with real item icons
 local function ResolveIcons()
-    for _, row in pairs(rows) do
+    for _, row in ipairs(rows) do
         if row.currency and row.currency.type == "item" and row.currency.itemID then
             local icon = GetItemIcon(row.currency.itemID)
             if icon ~= FALLBACK_ICON then
@@ -180,7 +180,7 @@ end
 local function UpdateCurrencies()
     if not panel or not panel:IsShown() then return end
 
-    for _, row in pairs(rows) do
+    for _, row in ipairs(rows) do
         if row.type == "money" then
             row.text:SetText(FormatMoney(GetMoney()))
         elseif row.currency then
@@ -227,7 +227,7 @@ local function CreateTab()
     hooksecurefunc("CharacterFrameTab_OnClick", function(self)
         if self:GetID() == tabID then
             -- Hide all other subframes
-            for _, frameName in pairs(CHARACTERFRAME_SUBFRAMES) do
+            for _, frameName in ipairs(CHARACTERFRAME_SUBFRAMES) do
                 local frame = _G[frameName]
                 if frame and frameName ~= "TBCCurrenciesPanel" then
                     frame:Hide()
@@ -253,12 +253,17 @@ local function CreatePanel()
     -- Register in CHARACTERFRAME_SUBFRAMES
     tinsert(CHARACTERFRAME_SUBFRAMES, "TBCCurrenciesPanel")
 
+    -- Panel title
+    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", panel, "TOP", 0, -22)
+    title:SetText("Currency")
+
     local yOffset = TOP_OFFSET
 
-    for _, sectionData in pairs(CURRENCIES) do
+    for _, sectionData in ipairs(CURRENCIES) do
         -- Check if section has any visible currencies for this faction
         local hasVisible = false
-        for _, curr in pairs(sectionData.currencies) do
+        for _, curr in ipairs(sectionData.currencies) do
             if not curr.faction or curr.faction == playerFaction then
                 hasVisible = true
                 break
@@ -268,7 +273,7 @@ local function CreatePanel()
         if hasVisible then
             yOffset = CreateSectionHeader(panel, sectionData.section, yOffset)
 
-            for _, curr in pairs(sectionData.currencies) do
+            for _, curr in ipairs(sectionData.currencies) do
                 if not curr.faction or curr.faction == playerFaction then
                     if curr.type == "money" then
                         local row
