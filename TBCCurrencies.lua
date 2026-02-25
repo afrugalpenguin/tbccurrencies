@@ -105,7 +105,7 @@ local function CreateSectionHeader(parent, text, yOffset)
 
     local separator = parent:CreateTexture(nil, "ARTWORK")
     separator:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
-    separator:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -2)
+    separator:SetPoint("RIGHT", parent, "RIGHT", -RIGHT_PADDING, 0)
     separator:SetHeight(1)
     separator:SetColorTexture(0.6, 0.5, 0.2, 0.5)
 
@@ -305,6 +305,9 @@ addon:SetScript("OnEvent", function(self, event)
         self:RegisterEvent("BAG_UPDATE")
         self:RegisterEvent("PLAYER_MONEY")
         self:RegisterEvent("HONOR_CURRENCY_UPDATE")
+        self:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+    elseif event == "GET_ITEM_INFO_RECEIVED" then
+        ResolveIcons()
     else
         UpdateCurrencies()
     end
