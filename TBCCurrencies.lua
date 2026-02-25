@@ -9,9 +9,8 @@ local ICON_SIZE = 16
 local LEFT_PADDING = 16
 local RIGHT_PADDING = 16
 local TOP_OFFSET = -72
-local CONTENT_WIDTH = 298
 
--- Currency IDs for honor/arena (used with GetCurrencyInfo)
+-- Currency IDs for honor/arena (used with C_CurrencyInfo)
 local HONOR_CURRENCY_ID = 1901
 local ARENA_CURRENCY_ID = 1900
 
@@ -67,8 +66,9 @@ local CURRENCIES = {
 }
 
 local panel
+local scrollChild
 local rows = {}
-local sections = {} -- track section frames for collapse/expand
+local sections = {}
 local tabID
 
 -- Format copper amount into colored gold/silver/copper string
@@ -109,16 +109,19 @@ end
 
 -- Reposition all visible rows after a collapse/expand
 local function RelayoutPanel()
-    local yOffset = TOP_OFFSET
+    local yOffset = 0
 
     for _, sec in ipairs(sections) do
-        -- Position header
-        sec.headerFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", LEFT_PADDING, yOffset)
+        sec.headerFrame:ClearAllPoints()
+        sec.headerFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+        sec.headerFrame:SetPoint("RIGHT", scrollChild, "RIGHT", 0, 0)
         yOffset = yOffset - HEADER_HEIGHT
 
         if not sec.collapsed then
             for _, row in ipairs(sec.rows) do
-                row:SetPoint("TOPLEFT", panel, "TOPLEFT", LEFT_PADDING, yOffset)
+                row:ClearAllPoints()
+                row:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+                row:SetPoint("RIGHT", scrollChild, "RIGHT", 0, 0)
                 row:Show()
                 yOffset = yOffset - ROW_HEIGHT
             end
@@ -128,31 +131,31 @@ local function RelayoutPanel()
             end
         end
 
-        yOffset = yOffset - 4 -- spacing between sections
+        yOffset = yOffset - 4
     end
+
+    scrollChild:SetHeight(-yOffset)
 end
 
--- Create a clickable section header with collapse/expand toggle
+-- Create a clickable section header with collapse/expand toggle on the right
 local function CreateSectionHeader(parent, text, sectionIndex)
     local headerFrame = CreateFrame("Button", nil, parent)
     headerFrame:SetHeight(HEADER_HEIGHT)
-    headerFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, 0)
-    headerFrame:SetWidth(CONTENT_WIDTH)
-
-    -- Triangle indicator
-    local arrow = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    arrow:SetPoint("LEFT", headerFrame, "LEFT", 0, 0)
-    arrow:SetTextColor(1, 0.82, 0)
-    arrow:SetText("v")
 
     local header = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    header:SetPoint("LEFT", arrow, "RIGHT", 4, 0)
+    header:SetPoint("LEFT", headerFrame, "LEFT", LEFT_PADDING, 0)
     header:SetTextColor(1, 0.82, 0)
     header:SetText(text)
 
+    -- Arrow on the right side
+    local arrow = headerFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    arrow:SetPoint("RIGHT", headerFrame, "RIGHT", -RIGHT_PADDING, 0)
+    arrow:SetTextColor(1, 0.82, 0)
+    arrow:SetText("v")
+
     local separator = headerFrame:CreateTexture(nil, "ARTWORK")
-    separator:SetPoint("TOPLEFT", header, "BOTTOMLEFT", -14, -2)
-    separator:SetPoint("RIGHT", headerFrame, "RIGHT", 0, 0)
+    separator:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
+    separator:SetPoint("RIGHT", headerFrame, "RIGHT", -RIGHT_PADDING, 0)
     separator:SetHeight(1)
     separator:SetColorTexture(0.6, 0.5, 0.2, 0.5)
 
@@ -170,12 +173,10 @@ end
 -- Create a money display row
 local function CreateMoneyRow(parent)
     local row = CreateFrame("Frame", nil, parent)
-    row:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, 0)
-    row:SetWidth(CONTENT_WIDTH)
     row:SetHeight(ROW_HEIGHT)
 
     local icon = row:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("LEFT", row, "LEFT", 0, 0)
+    icon:SetPoint("LEFT", row, "LEFT", LEFT_PADDING, 0)
     icon:SetSize(ICON_SIZE, ICON_SIZE)
     icon:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
 
@@ -193,15 +194,12 @@ end
 -- Create a currency display row (icon + name + count)
 local function CreateCurrencyRow(parent, currency)
     local row = CreateFrame("Frame", nil, parent)
-    row:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PADDING, 0)
-    row:SetWidth(CONTENT_WIDTH)
     row:SetHeight(ROW_HEIGHT)
 
     local icon = row:CreateTexture(nil, "ARTWORK")
-    icon:SetPoint("LEFT", row, "LEFT", 0, 0)
+    icon:SetPoint("LEFT", row, "LEFT", LEFT_PADDING, 0)
     icon:SetSize(ICON_SIZE, ICON_SIZE)
 
-    -- Set icon texture
     if currency.type == "item" then
         icon:SetTexture(GetItemIcon(currency.itemID))
     elseif currency.type == "currency" then
@@ -211,7 +209,6 @@ local function CreateCurrencyRow(parent, currency)
         icon:SetTexture(currency.icon or FALLBACK_ICON)
     end
 
-    -- Dim by default
     icon:SetDesaturated(true)
 
     local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -221,7 +218,7 @@ local function CreateCurrencyRow(parent, currency)
     nameText:SetJustifyH("LEFT")
 
     local countText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    countText:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+    countText:SetPoint("RIGHT", row, "RIGHT", -RIGHT_PADDING, 0)
     countText:SetTextColor(0.5, 0.5, 0.5)
     countText:SetText("0")
     countText:SetJustifyH("RIGHT")
@@ -306,7 +303,7 @@ local function CreatePanel()
     -- Register in CHARACTERFRAME_SUBFRAMES so Blizzard's show/hide system works
     tinsert(CHARACTERFRAME_SUBFRAMES, "TBCCurrenciesPanel")
 
-    -- Background textures matching other CharacterFrame subframes (Reputation, Skills, etc.)
+    -- Background textures matching other CharacterFrame subframes
     local bgTL = panel:CreateTexture(nil, "BORDER")
     bgTL:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-General-TopLeft")
     bgTL:SetSize(256, 256)
@@ -327,10 +324,24 @@ local function CreatePanel()
     bgBR:SetSize(128, 256)
     bgBR:SetPoint("BOTTOMRIGHT")
 
+    -- ScrollFrame for content
+    local scrollFrame = CreateFrame("ScrollFrame", "TBCCurrenciesScrollFrame", panel, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, TOP_OFFSET)
+    scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -26, 8)
+
+    scrollChild = CreateFrame("Frame", nil, scrollFrame)
+    scrollChild:SetWidth(scrollFrame:GetWidth())
+    scrollChild:SetHeight(1) -- updated by RelayoutPanel
+    scrollFrame:SetScrollChild(scrollChild)
+
+    -- Update scrollChild width when scrollFrame resizes
+    scrollFrame:SetScript("OnSizeChanged", function(self)
+        scrollChild:SetWidth(self:GetWidth())
+    end)
+
     local sectionIndex = 0
 
     for _, sectionData in ipairs(CURRENCIES) do
-        -- Check if section has any visible currencies for this faction
         local hasVisible = false
         for _, curr in ipairs(sectionData.currencies) do
             if not curr.faction or curr.faction == playerFaction then
@@ -341,7 +352,7 @@ local function CreatePanel()
 
         if hasVisible then
             sectionIndex = sectionIndex + 1
-            local headerFrame = CreateSectionHeader(panel, sectionData.section, sectionIndex)
+            local headerFrame = CreateSectionHeader(scrollChild, sectionData.section, sectionIndex)
 
             local sectionRows = {}
 
@@ -349,9 +360,9 @@ local function CreatePanel()
                 if not curr.faction or curr.faction == playerFaction then
                     local row
                     if curr.type == "money" then
-                        row = CreateMoneyRow(panel)
+                        row = CreateMoneyRow(scrollChild)
                     else
-                        row = CreateCurrencyRow(panel, curr)
+                        row = CreateCurrencyRow(scrollChild, curr)
                     end
                     tinsert(rows, row)
                     tinsert(sectionRows, row)
