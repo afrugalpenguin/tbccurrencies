@@ -326,8 +326,8 @@ local function CreatePanel()
 
     -- ScrollFrame for content
     local scrollFrame = CreateFrame("ScrollFrame", "TBCCurrenciesScrollFrame", panel, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, TOP_OFFSET)
-    scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -26, 8)
+    scrollFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, TOP_OFFSET)
+    scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -26, 44)
 
     scrollChild = CreateFrame("Frame", nil, scrollFrame)
     scrollChild:SetWidth(scrollFrame:GetWidth())
