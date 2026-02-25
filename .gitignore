@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Lua
+lua_modules/
+.luarocks/
+
+# Build artifacts
+*.zip
+
+# Screenshots
+*.png
+
+# Claude
+CLAUDE.md
+.claude/
+
+# Docs/plans
+docs/
