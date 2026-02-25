@@ -281,22 +281,27 @@ local function CreateTab()
 
     PanelTemplates_SetNumTabs(CharacterFrame, numTabs)
 
+    local hiddenByUs = {}
+
     hooksecurefunc("CharacterFrameTab_OnClick", function(self)
+        -- Restore anything we previously hid
+        for _, child in ipairs(hiddenByUs) do
+            child:Show()
+        end
+        hiddenByUs = {}
+
         if self:GetID() == tabID then
-            -- Hide all known subframes (including Blizzard ones the hook may have shown)
-            for _, frameName in ipairs(CHARACTERFRAME_SUBFRAMES) do
-                local frame = _G[frameName]
-                if frame and frameName ~= "TBCCurrenciesPanel" then
-                    frame:Hide()
+            -- Hide all CharacterFrame children except tabs and our panel
+            for i = 1, CharacterFrame:GetNumChildren() do
+                local child = select(i, CharacterFrame:GetChildren())
+                local name = child:GetName() or ""
+                if not name:match("^CharacterFrameTab%d") and child ~= panel then
+                    if child:IsShown() then
+                        child:Hide()
+                        tinsert(hiddenByUs, child)
+                    end
                 end
             end
-            -- Explicitly hide Blizzard frames that may have been shown by the original handler
-            if PaperDollFrame then PaperDollFrame:Hide() end
-            if PetPaperDollFrame then _G["PetPaperDollFrame"]:Hide() end
-            if _G["ReputationFrame"] then _G["ReputationFrame"]:Hide() end
-            if _G["SkillFrame"] then _G["SkillFrame"]:Hide() end
-            if _G["PVPFrame"] then _G["PVPFrame"]:Hide() end
-            if _G["TokenFrame"] then _G["TokenFrame"]:Hide() end
             panel:Show()
             PanelTemplates_SetTab(CharacterFrame, tabID)
         else

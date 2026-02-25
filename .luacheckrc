@@ -7,7 +7,7 @@ globals = {
 
 read_globals = {
     -- WoW Frame API
-    "CreateFrame", "UIParent", "CharacterFrame", "PaperDollFrame", "PetPaperDollFrame",
+    "CreateFrame", "UIParent", "CharacterFrame",
     "PanelTemplates_SetNumTabs", "PanelTemplates_SetTab",
     "hooksecurefunc", "GameTooltip",
 
