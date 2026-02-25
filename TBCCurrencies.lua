@@ -281,39 +281,13 @@ local function CreateTab()
 
     PanelTemplates_SetNumTabs(CharacterFrame, numTabs)
 
-    -- Known content frames to hide (subframes + stat panels)
-    local CONTENT_FRAMES = {
-        "PaperDollFrame", "PetPaperDollFrame", "ReputationFrame",
-        "SkillFrame", "PVPFrame", "TokenFrame",
-        "PlayerStatFrameLeft1", "PlayerStatFrameLeft2", "PlayerStatFrameLeft3", "PlayerStatFrameLeft4",
-        "PlayerStatFrameRight1", "PlayerStatFrameRight2", "PlayerStatFrameRight3", "PlayerStatFrameRight4",
-        "CharacterAttributesFrame", "CharacterModelFrame",
-    }
-
-    local hiddenByUs = {}
-
     hooksecurefunc("CharacterFrameTab_OnClick", function(self)
-        -- Restore anything we previously hid
-        for _, frame in ipairs(hiddenByUs) do
-            frame:Show()
-        end
-        hiddenByUs = {}
-
         if self:GetID() == tabID then
-            -- Hide all known content frames
-            for _, frameName in ipairs(CONTENT_FRAMES) do
-                local frame = _G[frameName]
-                if frame and frame:IsShown() then
-                    frame:Hide()
-                    tinsert(hiddenByUs, frame)
-                end
-            end
-            -- Also hide anything in CHARACTERFRAME_SUBFRAMES
+            -- Hide Blizzard subframes (same ones Blizzard hides when switching tabs)
             for _, frameName in ipairs(CHARACTERFRAME_SUBFRAMES) do
                 local frame = _G[frameName]
-                if frame and frame:IsShown() and frameName ~= "TBCCurrenciesPanel" then
+                if frame and frameName ~= "TBCCurrenciesPanel" then
                     frame:Hide()
-                    tinsert(hiddenByUs, frame)
                 end
             end
             panel:Show()
