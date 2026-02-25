@@ -12,7 +12,7 @@ read_globals = {
     "hooksecurefunc", "GameTooltip",
 
     -- WoW APIs used by this addon
-    "GetMoney", "GetCurrencyInfo", "GetItemCount",
+    "GetMoney", "C_CurrencyInfo", "GetItemCount",
     "GetItemInfo", "UnitFactionGroup",
 
     -- WoW globals

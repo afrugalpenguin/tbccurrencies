@@ -88,12 +88,6 @@ local function GetItemIcon(itemID)
     return texture or FALLBACK_ICON
 end
 
--- Get currency info (icon + count) via GetCurrencyInfo
-local function GetCurrencyData(currencyID)
-    local name, count, texture = GetCurrencyInfo(currencyID)
-    return name, count or 0, texture or FALLBACK_ICON
-end
-
 -- Try to resolve any fallback icons with real item/currency icons
 local function ResolveIcons()
     for _, row in ipairs(rows) do
@@ -104,9 +98,9 @@ local function ResolveIcons()
                     row.icon:SetTexture(icon)
                 end
             elseif row.currency.type == "currency" and row.currency.currencyID then
-                local _, _, texture = GetCurrencyInfo(row.currency.currencyID)
-                if texture then
-                    row.icon:SetTexture(texture)
+                local info = C_CurrencyInfo.GetCurrencyInfo(row.currency.currencyID)
+                if info and info.iconFileID then
+                    row.icon:SetTexture(info.iconFileID)
                 end
             end
         end
@@ -211,8 +205,8 @@ local function CreateCurrencyRow(parent, currency)
     if currency.type == "item" then
         icon:SetTexture(GetItemIcon(currency.itemID))
     elseif currency.type == "currency" then
-        local _, _, texture = GetCurrencyInfo(currency.currencyID)
-        icon:SetTexture(texture or FALLBACK_ICON)
+        local info = C_CurrencyInfo.GetCurrencyInfo(currency.currencyID)
+        icon:SetTexture((info and info.iconFileID) or FALLBACK_ICON)
     else
         icon:SetTexture(currency.icon or FALLBACK_ICON)
     end
@@ -252,8 +246,8 @@ local function UpdateCurrencies()
             local curr = row.currency
 
             if curr.type == "currency" and curr.currencyID then
-                local _, amount = GetCurrencyInfo(curr.currencyID)
-                count = amount or 0
+                local info = C_CurrencyInfo.GetCurrencyInfo(curr.currencyID)
+                count = (info and info.quantity) or 0
             elseif curr.type == "item" and curr.itemID then
                 count = GetItemCount(curr.itemID)
             end
