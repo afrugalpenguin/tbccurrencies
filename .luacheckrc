@@ -3,12 +3,14 @@ max_line_length = false
 
 globals = {
     "CHARACTERFRAME_SUBFRAMES",
+    "CharacterFrameTab_OnClick",
 }
 
 read_globals = {
     -- WoW Frame API
     "CreateFrame", "UIParent", "CharacterFrame",
     "PanelTemplates_SetNumTabs", "PanelTemplates_SetTab",
+    "CharacterFrame_ShowSubFrame",
     "hooksecurefunc", "GameTooltip",
 
     -- WoW APIs used by this addon
