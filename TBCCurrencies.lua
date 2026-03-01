@@ -278,16 +278,22 @@ local function CreateTab()
 
     PanelTemplates_SetNumTabs(CharacterFrame, numTabs)
 
-    -- Add our tab to CharacterFrameTab_OnClick by replacing it
-    local origOnClick = CharacterFrameTab_OnClick
-    CharacterFrameTab_OnClick = function(self, button)
+    -- Hook tab clicks: manually show/hide our panel to avoid tainting secure frames
+    hooksecurefunc("CharacterFrameTab_OnClick", function(self)
         if self:GetName() == "CharacterFrameTab" .. tabID then
-            ToggleCharacter("TBCCurrenciesPanel")
+            -- Hide all default subframes
+            for _, name in ipairs(CHARACTERFRAME_SUBFRAMES) do
+                local frame = _G[name]
+                if frame then frame:Hide() end
+            end
+            PanelTemplates_SetTab(CharacterFrame, tabID)
+            panel:Show()
             PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
         else
-            origOnClick(self, button)
+            -- Another tab clicked, hide our panel
+            panel:Hide()
         end
-    end
+    end)
 end
 
 -- Build the panel and all currency rows
@@ -299,9 +305,6 @@ local function CreatePanel()
     panel:SetAllPoints(CharacterFrame)
     panel:SetID(tabID)
     panel:Hide()
-
-    -- Register in CHARACTERFRAME_SUBFRAMES so Blizzard's show/hide system works
-    tinsert(CHARACTERFRAME_SUBFRAMES, "TBCCurrenciesPanel")
 
     -- Background textures matching other CharacterFrame subframes
     local bgTL = panel:CreateTexture(nil, "BORDER")
